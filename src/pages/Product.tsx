@@ -3,10 +3,13 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import MainLayout from '@/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Heart, Share2 } from 'lucide-react';
+import { ShoppingCart, Share2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProductGrid from '@/components/products/ProductGrid';
+import StarRating from '@/components/products/StarRating';
+import ProductReviews from '@/components/products/ProductReviews';
+import WishlistButton from '@/components/products/WishlistButton';
 
 // Mock product data
 const productData = {
@@ -27,7 +30,9 @@ const productData = {
     material: 'Natural fibers',
     dimensions: '10" x 12"',
     weight: '0.5kg'
-  }
+  },
+  rating: 4.5,
+  reviewsCount: 23
 };
 
 // Mock related products
@@ -120,7 +125,16 @@ const Product = () => {
                 {productData.shop.name}
               </Link>
             </div>
-            <h1 className="text-3xl font-bold mb-4">{productData.name}</h1>
+            <h1 className="text-3xl font-bold mb-2">{productData.name}</h1>
+            
+            {/* Rating display */}
+            <div className="flex items-center mb-4">
+              <StarRating rating={productData.rating} />
+              <span className="ml-2 text-iwanyu-gray">
+                {productData.rating.toFixed(1)} ({productData.reviewsCount} reviews)
+              </span>
+            </div>
+            
             <div className="text-2xl font-semibold text-iwanyu-orange mb-6">
               {productData.price.toLocaleString('en-US', { style: 'currency', currency: 'RWF' })}
             </div>
@@ -160,10 +174,13 @@ const Product = () => {
                 <ShoppingCart className="mr-2 h-5 w-5" />
                 Add to Cart
               </Button>
-              <Button variant="outline" className="flex-grow sm:flex-grow-0">
-                <Heart className="mr-2 h-5 w-5" />
-                Save
-              </Button>
+              
+              <WishlistButton 
+                productId={productData.id} 
+                productName={productData.name}
+                className="flex-grow sm:flex-grow-0"
+              />
+              
               <Button variant="outline" className="flex-grow sm:flex-grow-0">
                 <Share2 className="mr-2 h-5 w-5" />
                 Share
@@ -178,6 +195,7 @@ const Product = () => {
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="shipping">Shipping</TabsTrigger>
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
+            <TabsTrigger value="qa">Q&A</TabsTrigger>
           </TabsList>
           <TabsContent value="details" className="py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -206,8 +224,11 @@ const Product = () => {
             </p>
           </TabsContent>
           <TabsContent value="reviews" className="py-4">
+            <ProductReviews productId={productData.id} productName={productData.name} />
+          </TabsContent>
+          <TabsContent value="qa" className="py-4">
             <p className="text-center text-iwanyu-gray py-8">
-              No reviews yet. Be the first to review this product!
+              No questions yet. Be the first to ask a question about this product!
             </p>
           </TabsContent>
         </Tabs>
