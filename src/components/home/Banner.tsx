@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 const Banner = () => {
   return (
@@ -12,11 +13,11 @@ const Banner = () => {
             Discover unique products from Rwanda's amazing local shops, all in one place.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button className="bg-white hover:bg-iwanyu-light-gray text-iwanyu-orange text-lg px-8 py-6">
-              Start Shopping
+            <Button className="bg-white hover:bg-iwanyu-light-gray text-iwanyu-orange text-lg px-8 py-6" asChild>
+              <Link to="/shop/all">Start Shopping</Link>
             </Button>
-            <Button variant="outline" className="border-white text-white hover:bg-white/10 text-lg px-8 py-6">
-              Open Your Shop
+            <Button variant="outline" className="border-white text-white hover:bg-white/10 text-lg px-8 py-6" asChild>
+              <Link to="/seller-subscription">Open Your Shop</Link>
             </Button>
           </div>
         </div>
