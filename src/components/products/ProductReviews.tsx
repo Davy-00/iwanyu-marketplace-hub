@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
+import { Star } from 'lucide-react';
 
 // Mock review data
 const mockReviews = [

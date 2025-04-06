@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,17 +35,26 @@ const categories = [
 ];
 
 const SearchAndFilter = () => {
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [openCategoryList, setOpenCategoryList] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [sortBy, setSortBy] = useState('relevance');
   
+  // Safely use the router hooks with error handling
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would navigate to search results with query params
-    navigate(`/search?query=${searchQuery}&category=${selectedCategory}&min=${priceRange.min}&max=${priceRange.max}&sort=${sortBy}`);
+    try {
+      // In a real app, this would navigate to search results with query params
+      navigate(`/search?query=${searchQuery}&category=${selectedCategory}&min=${priceRange.min}&max=${priceRange.max}&sort=${sortBy}`);
+    } catch (error) {
+      console.error("Navigation error:", error);
+      // Fallback for navigation errors
+      window.location.href = `/search?query=${searchQuery}&category=${selectedCategory}`;
+    }
   };
   
   return (

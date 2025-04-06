@@ -7,6 +7,7 @@ interface StarRatingProps {
   maxRating?: number;
   size?: number;
   className?: string;
+  onClick?: (rating: number) => void;
 }
 
 const StarRating = ({
@@ -14,7 +15,11 @@ const StarRating = ({
   maxRating = 5,
   size = 16,
   className = '',
+  onClick,
 }: StarRatingProps) => {
+  // Make sure rating is within bounds
+  const normalizedRating = Math.min(Math.max(0, rating), maxRating);
+  
   return (
     <div className={`flex items-center ${className}`}>
       {Array.from({ length: maxRating }).map((_, index) => (
@@ -22,10 +27,11 @@ const StarRating = ({
           key={index}
           size={size}
           className={`${
-            index < rating
+            index < normalizedRating
               ? 'text-iwanyu-orange fill-iwanyu-orange'
               : 'text-gray-300'
-          } mr-0.5`}
+          } mr-0.5 ${onClick ? 'cursor-pointer' : ''}`}
+          onClick={() => onClick && onClick(index + 1)}
         />
       ))}
     </div>
