@@ -3,12 +3,13 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useNavigate } from 'react-router-dom';
 
 interface CartSummaryProps {
   subtotal: number;
   shipping: number;
   total: number;
-  onCheckout: () => void;
+  onCheckout?: () => void;
   isLoading?: boolean;
 }
 
@@ -19,6 +20,16 @@ const CartSummary = ({
   onCheckout, 
   isLoading = false 
 }: CartSummaryProps) => {
+  const navigate = useNavigate();
+
+  const handleCheckout = () => {
+    if (onCheckout) {
+      onCheckout();
+    } else {
+      navigate('/checkout');
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -42,7 +53,7 @@ const CartSummary = ({
       <CardFooter>
         <Button 
           className="w-full bg-iwanyu-orange hover:bg-iwanyu-dark-orange"
-          onClick={onCheckout}
+          onClick={handleCheckout}
           disabled={isLoading || total <= 0}
         >
           {isLoading ? "Processing..." : "Proceed to Checkout"}

@@ -50,12 +50,8 @@ const Cart = () => {
 
   const handleCheckout = () => {
     setIsCheckingOut(true);
-    
-    // Simulate checkout process
-    setTimeout(() => {
-      setIsCheckingOut(false);
-      navigate('/checkout');
-    }, 1500);
+    // Navigate to the checkout page
+    navigate('/checkout');
   };
 
   const subtotal = cartItems.reduce(
