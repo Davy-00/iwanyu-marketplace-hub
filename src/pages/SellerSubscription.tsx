@@ -40,7 +40,8 @@ const subscriptionPlans = [
       'Integrated delivery tracking'
     ],
     icon: '⚪',
-    buttonText: 'Upgrade to Pro'
+    buttonText: 'Upgrade to Pro',
+    recommended: true
   },
   {
     id: 'premium',
@@ -57,8 +58,7 @@ const subscriptionPlans = [
       'Premium delivery (fast dispatch + tracking)'
     ],
     icon: '🧡',
-    buttonText: 'Go Premium',
-    recommended: true
+    buttonText: 'Go Premium'
   }
 ];
 
@@ -71,7 +71,7 @@ const SellerSubscription = () => {
   const { toast } = useToast();
   const form = useForm<FormValues>({
     defaultValues: {
-      plan: 'starter'
+      plan: 'pro' // Changed default plan to pro
     }
   });
 
