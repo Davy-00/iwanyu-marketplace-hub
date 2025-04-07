@@ -1,62 +1,51 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Eye, Filter, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-
-// Mock order data
-const orderData = [
-  {
-    id: 'ORD-001',
-    date: '2025-04-05',
-    customer: 'John Smith',
-    total: 65000,
-    status: 'Delivered',
-    payment: 'Completed'
-  },
-  {
-    id: 'ORD-002',
-    date: '2025-04-04',
-    customer: 'Mary Johnson',
-    total: 32000,
-    status: 'Processing',
-    payment: 'Completed'
-  },
-  {
-    id: 'ORD-003',
-    date: '2025-04-03',
-    customer: 'Robert Brown',
-    total: 48500,
-    status: 'Shipped',
-    payment: 'Completed'
-  },
-  {
-    id: 'ORD-004',
-    date: '2025-04-03',
-    customer: 'Alice Williams',
-    total: 28000,
-    status: 'Processing',
-    payment: 'Pending'
-  },
-  {
-    id: 'ORD-005',
-    date: '2025-04-02',
-    customer: 'David Miller',
-    total: 76000,
-    status: 'Delivered',
-    payment: 'Completed'
-  }
-];
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 const AdminOrderManagement = () => {
+  const [orders, setOrders] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
   
-  const filteredOrders = orderData.filter(order => 
-    order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.status.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+  
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('date', { ascending: false });
+        
+      if (error) {
+        throw error;
+      }
+      
+      setOrders(data || []);
+    } catch (error: any) {
+      console.error('Error fetching orders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load orders",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const filteredOrders = orders.filter(order => 
+    order.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.customer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.status?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
   const getStatusColor = (status: string) => {
@@ -114,55 +103,67 @@ const AdminOrderManagement = () => {
           </Button>
         </div>
         
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Payment</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredOrders.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell className="font-medium">{order.id}</TableCell>
-                <TableCell>{order.date}</TableCell>
-                <TableCell>{order.customer}</TableCell>
-                <TableCell>
-                  {order.total.toLocaleString('en-US', { 
-                    style: 'currency', 
-                    currency: 'RWF',
-                    maximumFractionDigits: 0 
-                  })}
-                </TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(order.status)}`}>
-                    {order.status}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 text-xs rounded-full ${getPaymentColor(order.payment)}`}>
-                    {order.payment}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="sm">
-                    <Eye className="h-4 w-4 mr-1" />
-                    Details
-                  </Button>
-                </TableCell>
+        {loading ? (
+          <p className="text-center py-4">Loading orders...</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order ID</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Payment</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filteredOrders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    No orders found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">{order.id}</TableCell>
+                    <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
+                    <TableCell>{order.customer}</TableCell>
+                    <TableCell>
+                      {Number(order.total).toLocaleString('en-US', { 
+                        style: 'currency', 
+                        currency: 'RWF',
+                        maximumFractionDigits: 0 
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(order.status)}`}>
+                        {order.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 text-xs rounded-full ${getPaymentColor(order.payment)}`}>
+                        {order.payment}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm">
+                        <Eye className="h-4 w-4 mr-1" />
+                        Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        )}
         
         <div className="flex justify-between items-center mt-4">
           <p className="text-sm text-iwanyu-gray">
-            Showing {filteredOrders.length} of {orderData.length} orders
+            Showing {filteredOrders.length} {filteredOrders.length === 1 ? 'order' : 'orders'}
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled>Previous</Button>

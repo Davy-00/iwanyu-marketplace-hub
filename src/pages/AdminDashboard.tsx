@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import AdminBannerForm from '@/components/admin/AdminBannerForm';
 import AdminProductManagement from '@/components/admin/AdminProductManagement';
 import AdminOrderManagement from '@/components/admin/AdminOrderManagement';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // Mock data for admin dashboard
 const adminData = {
@@ -80,6 +81,37 @@ const adminData = {
 
 const AdminDashboard = () => {
   const [showBannerForm, setShowBannerForm] = useState(false);
+  const [banners, setBanners] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    fetchBanners();
+  }, []);
+  
+  const fetchBanners = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('banners')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        throw error;
+      }
+      
+      setBanners(data || []);
+    } catch (error: any) {
+      console.error('Error fetching banners:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load banners",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const handleAddBanner = () => {
     setShowBannerForm(true);
@@ -88,11 +120,48 @@ const AdminDashboard = () => {
   const handleBannerFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setShowBannerForm(false);
-    toast({
-      title: "Success",
-      description: "Banner added successfully!",
-      variant: "default",
-    });
+    fetchBanners(); // Refresh banners after adding a new one
+  };
+  
+  const handleRemoveBanner = async (bannerId: string) => {
+    try {
+      // First find the banner to get its image URL
+      const bannerToDelete = banners.find(b => b.id === bannerId);
+      if (!bannerToDelete) return;
+      
+      // Extract the file name from the URL
+      const imageUrl = bannerToDelete.image_url;
+      const fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+      
+      // Delete the banner from the database
+      const { error: deleteError } = await supabase
+        .from('banners')
+        .delete()
+        .eq('id', bannerId);
+        
+      if (deleteError) throw deleteError;
+      
+      // Try to delete the image file from storage (might fail if file doesn't exist)
+      await supabase
+        .storage
+        .from('banners')
+        .remove([fileName]);
+      
+      // Remove from local state
+      setBanners(banners.filter(banner => banner.id !== bannerId));
+      
+      toast({
+        title: "Success",
+        description: "Banner deleted successfully",
+      });
+    } catch (error: any) {
+      console.error('Error deleting banner:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete banner",
+        variant: "destructive",
+      });
+    }
   };
   
   return (
@@ -285,37 +354,46 @@ const AdminDashboard = () => {
                   />
                 ) : (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between bg-gray-50 p-4 rounded-md">
-                      <div className="flex items-center space-x-4">
-                        <div className="bg-gray-200 h-16 w-24 rounded flex items-center justify-center">
-                          <Image className="h-6 w-6 text-gray-400" />
+                    {loading ? (
+                      <p className="text-center py-4">Loading banners...</p>
+                    ) : banners.length === 0 ? (
+                      <p className="text-center py-4">No banners available. Add your first banner!</p>
+                    ) : (
+                      banners.map(banner => (
+                        <div key={banner.id} className="flex items-center justify-between bg-gray-50 p-4 rounded-md">
+                          <div className="flex items-center space-x-4">
+                            <div className="bg-gray-200 h-16 w-24 rounded flex items-center justify-center overflow-hidden">
+                              {banner.image_url ? (
+                                <img 
+                                  src={banner.image_url} 
+                                  alt={banner.title} 
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <Image className="h-6 w-6 text-gray-400" />
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="font-medium">{banner.title}</h3>
+                              <p className="text-sm text-iwanyu-gray">
+                                Active until {new Date(banner.expiry_date).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button variant="ghost" size="sm">Edit</Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-500"
+                              onClick={() => handleRemoveBanner(banner.id)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-medium">Holiday Season Sale</h3>
-                          <p className="text-sm text-iwanyu-gray">Active until Apr 15, 2025</p>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">Edit</Button>
-                        <Button variant="ghost" size="sm" className="text-red-500">Remove</Button>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between bg-gray-50 p-4 rounded-md">
-                      <div className="flex items-center space-x-4">
-                        <div className="bg-gray-200 h-16 w-24 rounded flex items-center justify-center">
-                          <Image className="h-6 w-6 text-gray-400" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">New Arrivals</h3>
-                          <p className="text-sm text-iwanyu-gray">Active until Apr 30, 2025</p>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">Edit</Button>
-                        <Button variant="ghost" size="sm" className="text-red-500">Remove</Button>
-                      </div>
-                    </div>
+                      ))
+                    )}
                   </div>
                 )}
               </CardContent>
