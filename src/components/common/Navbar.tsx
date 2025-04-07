@@ -18,8 +18,8 @@ const Navbar = () => {
             <span className="text-2xl font-bold text-iwanyu-orange">Iwanyu</span>
           </Link>
 
-          {/* Search Bar - Hidden on mobile */}
-          <div className="hidden md:flex flex-1 mx-8">
+          {/* Search Bar - Visible on all screen sizes */}
+          <div className="flex flex-1 mx-4 md:mx-8">
             <div className="relative w-full max-w-xl">
               <Input
                 type="text"
@@ -71,18 +71,6 @@ const Navbar = () => {
                 <Menu className="h-6 w-6 text-iwanyu-dark-gray" />
               )}
             </button>
-          </div>
-        </div>
-
-        {/* Mobile Search Bar */}
-        <div className="mt-4 md:hidden">
-          <div className="relative">
-            <Input
-              type="text"
-              placeholder="Search for products, shops..."
-              className="w-full pl-10 pr-4"
-            />
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-iwanyu-gray" />
           </div>
         </div>
 
