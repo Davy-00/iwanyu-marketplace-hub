@@ -1,23 +1,226 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Store, Users, ShoppingBag, DollarSign, Image, Package } from 'lucide-react';
 import MainLayout from '@/layouts/MainLayout';
-import AdminStatisticsCards from '@/components/admin/AdminStatisticsCards';
-import AdminSellersTable from '@/components/admin/AdminSellersTable';
-import AdminCustomersTable from '@/components/admin/AdminCustomersTable';
+import AdminBannerForm from '@/components/admin/AdminBannerForm';
 import AdminProductManagement from '@/components/admin/AdminProductManagement';
 import AdminOrderManagement from '@/components/admin/AdminOrderManagement';
-import AdminPromotionsTab from '@/components/admin/AdminPromotionsTab';
-import { adminData } from '@/components/admin/AdminDashboardData';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+// Mock data for admin dashboard
+const adminData = {
+  statistics: {
+    totalSellers: 48,
+    totalCustomers: 520,
+    totalOrders: 1240,
+    totalRevenue: 28500000
+  },
+  sellers: [
+    {
+      id: '1',
+      name: 'Rwanda Crafts',
+      owner: 'Marie Uwase',
+      products: 24,
+      status: 'Active',
+      joined: '2025-01-15'
+    },
+    {
+      id: '2',
+      name: 'Kigali Coffee',
+      owner: 'Jean Pierre',
+      products: 12,
+      status: 'Active',
+      joined: '2025-02-03'
+    },
+    {
+      id: '3',
+      name: 'Rwandan Styles',
+      owner: 'Grace Mutoni',
+      products: 36,
+      status: 'Pending',
+      joined: '2025-04-01'
+    },
+    {
+      id: '4',
+      name: 'Sweet Rwanda',
+      owner: 'Patrick Mugisha',
+      products: 8,
+      status: 'Active',
+      joined: '2025-02-22'
+    },
+  ],
+  customers: [
+    {
+      id: '1',
+      name: 'John Smith',
+      email: 'john@example.com',
+      orders: 8,
+      joined: '2025-01-20'
+    },
+    {
+      id: '2',
+      name: 'Mary Johnson',
+      email: 'mary@example.com',
+      orders: 12,
+      joined: '2025-02-10'
+    },
+    {
+      id: '3',
+      name: 'Robert Brown',
+      email: 'robert@example.com',
+      orders: 5,
+      joined: '2025-03-05'
+    }
+  ]
+};
 
 const AdminDashboard = () => {
+  const [showBannerForm, setShowBannerForm] = useState(false);
+  const [banners, setBanners] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    fetchBanners();
+  }, []);
+  
+  const fetchBanners = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('banners')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        throw error;
+      }
+      
+      setBanners(data || []);
+    } catch (error: any) {
+      console.error('Error fetching banners:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load banners",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleAddBanner = () => {
+    setShowBannerForm(true);
+  };
+  
+  const handleBannerFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowBannerForm(false);
+    fetchBanners(); // Refresh banners after adding a new one
+  };
+  
+  const handleRemoveBanner = async (bannerId: string) => {
+    try {
+      // First find the banner to get its image URL
+      const bannerToDelete = banners.find(b => b.id === bannerId);
+      if (!bannerToDelete) return;
+      
+      // Extract the file name from the URL
+      const imageUrl = bannerToDelete.image_url;
+      const fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+      
+      // Delete the banner from the database
+      const { error: deleteError } = await supabase
+        .from('banners')
+        .delete()
+        .eq('id', bannerId);
+        
+      if (deleteError) throw deleteError;
+      
+      // Try to delete the image file from storage (might fail if file doesn't exist)
+      await supabase
+        .storage
+        .from('banners')
+        .remove([fileName]);
+      
+      // Remove from local state
+      setBanners(banners.filter(banner => banner.id !== bannerId));
+      
+      toast({
+        title: "Success",
+        description: "Banner deleted successfully",
+      });
+    } catch (error: any) {
+      console.error('Error deleting banner:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete banner",
+        variant: "destructive",
+      });
+    }
+  };
+  
   return (
     <MainLayout>
       <div className="iwanyu-container py-8">
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         
         {/* Statistics Cards */}
-        <AdminStatisticsCards statistics={adminData.statistics} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Card 1 */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Sellers</CardTitle>
+              <Store className="h-5 w-5 text-iwanyu-orange" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{adminData.statistics.totalSellers}</div>
+              <p className="text-xs text-muted-foreground">+5 this month</p>
+            </CardContent>
+          </Card>
+          
+          {/* Card 2 */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+              <Users className="h-5 w-5 text-iwanyu-orange" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{adminData.statistics.totalCustomers}</div>
+              <p className="text-xs text-muted-foreground">+32 this month</p>
+            </CardContent>
+          </Card>
+          
+          {/* Card 3 */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+              <ShoppingBag className="h-5 w-5 text-iwanyu-orange" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{adminData.statistics.totalOrders}</div>
+              <p className="text-xs text-muted-foreground">+85 this month</p>
+            </CardContent>
+          </Card>
+          
+          {/* Card 4 */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-5 w-5 text-iwanyu-orange" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {adminData.statistics.totalRevenue.toLocaleString('en-US', { style: 'currency', currency: 'RWF', maximumFractionDigits: 0 })}
+              </div>
+              <p className="text-xs text-muted-foreground">+22% this month</p>
+            </CardContent>
+          </Card>
+        </div>
         
         {/* Dashboard Tabs */}
         <Tabs defaultValue="sellers">
@@ -31,12 +234,93 @@ const AdminDashboard = () => {
           
           {/* Sellers Tab */}
           <TabsContent value="sellers">
-            <AdminSellersTable sellers={adminData.sellers} />
+            <Card>
+              <CardHeader>
+                <CardTitle>Manage Sellers</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Store Name</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead>Products</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Joined Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {adminData.sellers.map((seller) => (
+                      <TableRow key={seller.id}>
+                        <TableCell>{seller.name}</TableCell>
+                        <TableCell>{seller.owner}</TableCell>
+                        <TableCell>{seller.products}</TableCell>
+                        <TableCell>
+                          <div className={`inline-block px-2 py-1 text-xs rounded-full ${
+                            seller.status === 'Active' ? 'bg-green-100 text-green-800' : 
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {seller.status}
+                          </div>
+                        </TableCell>
+                        <TableCell>{seller.joined}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm" className="mr-2">View</Button>
+                          {seller.status === 'Pending' ? (
+                            <Button variant="outline" size="sm" className="mr-2 border-green-500 text-green-500 hover:bg-green-50">
+                              Approve
+                            </Button>
+                          ) : (
+                            <Button variant="outline" size="sm" className="mr-2 border-red-500 text-red-500 hover:bg-red-50">
+                              Block
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
           
           {/* Customers Tab */}
           <TabsContent value="customers">
-            <AdminCustomersTable customers={adminData.customers} />
+            <Card>
+              <CardHeader>
+                <CardTitle>Manage Customers</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Orders</TableHead>
+                      <TableHead>Joined Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {adminData.customers.map((customer) => (
+                      <TableRow key={customer.id}>
+                        <TableCell>{customer.name}</TableCell>
+                        <TableCell>{customer.email}</TableCell>
+                        <TableCell>{customer.orders}</TableCell>
+                        <TableCell>{customer.joined}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm" className="mr-2">View</Button>
+                          <Button variant="outline" size="sm" className="border-red-500 text-red-500 hover:bg-red-50">
+                            Block
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
           
           {/* Products Tab */}
@@ -51,7 +335,69 @@ const AdminDashboard = () => {
           
           {/* Promotions Tab */}
           <TabsContent value="promotions">
-            <AdminPromotionsTab />
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Manage Homepage Banners</CardTitle>
+                <Button 
+                  className="bg-iwanyu-orange hover:bg-iwanyu-dark-orange"
+                  onClick={handleAddBanner}
+                >
+                  <Image className="mr-2 h-4 w-4" />
+                  Add New Banner
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {showBannerForm ? (
+                  <AdminBannerForm 
+                    onSubmit={handleBannerFormSubmit}
+                    onCancel={() => setShowBannerForm(false)}
+                  />
+                ) : (
+                  <div className="space-y-6">
+                    {loading ? (
+                      <p className="text-center py-4">Loading banners...</p>
+                    ) : banners.length === 0 ? (
+                      <p className="text-center py-4">No banners available. Add your first banner!</p>
+                    ) : (
+                      banners.map(banner => (
+                        <div key={banner.id} className="flex items-center justify-between bg-gray-50 p-4 rounded-md">
+                          <div className="flex items-center space-x-4">
+                            <div className="bg-gray-200 h-16 w-24 rounded flex items-center justify-center overflow-hidden">
+                              {banner.image_url ? (
+                                <img 
+                                  src={banner.image_url} 
+                                  alt={banner.title} 
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <Image className="h-6 w-6 text-gray-400" />
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="font-medium">{banner.title}</h3>
+                              <p className="text-sm text-iwanyu-gray">
+                                Active until {new Date(banner.expiry_date).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button variant="ghost" size="sm">Edit</Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-500"
+                              onClick={() => handleRemoveBanner(banner.id)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

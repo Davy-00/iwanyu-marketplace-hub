@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -74,7 +75,7 @@ const AdminBannerForm = ({ onSubmit, onCancel }: AdminBannerFormProps) => {
           title: bannerTitle,
           image_url: publicUrl,
           link_url: bannerLink,
-          expiry_date: new Date(expiryDate).toISOString(),
+          expiry_date: new Date(expiryDate),
           active: true
         });
       
