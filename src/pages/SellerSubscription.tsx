@@ -3,72 +3,85 @@ import React from 'react';
 import MainLayout from '@/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, AlertCircle } from 'lucide-react';
+import { Check, Circle, CircleDot, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
 
 const subscriptionPlans = [
   {
-    id: 'basic',
-    name: 'Basic Seller',
-    price: 'Free',
-    description: 'Get started with a basic shop on our platform',
+    id: 'starter',
+    name: 'Starter Plan',
+    price: '10,000 RWF',
+    period: '/month',
+    description: 'Perfect for new sellers.',
     features: [
-      'List up to 10 products',
-      'Basic shop analytics',
-      'Standard transaction fees (5%)',
-      'Email support'
+      'Add up to 10 products',
+      'Basic seller dashboard',
+      'Email support',
+      'Standard delivery support'
     ],
-    limitations: [
-      'No featured products',
-      'No promotional tools'
-    ]
+    icon: '🟠',
+    buttonText: 'Subscribe Now'
+  },
+  {
+    id: 'pro',
+    name: 'Pro Plan',
+    price: '20,000 RWF',
+    period: '/month',
+    description: 'Ideal for growing businesses.',
+    features: [
+      'Unlimited products',
+      'Advanced dashboard & analytics',
+      'Priority email support',
+      'Homepage feature eligibility',
+      'Integrated delivery tracking'
+    ],
+    icon: '⚪',
+    buttonText: 'Upgrade to Pro'
   },
   {
     id: 'premium',
-    name: 'Premium Seller',
-    price: '15,000 RWF',
+    name: 'Premium Plan',
+    price: '35,000 RWF',
     period: '/month',
-    description: 'Everything you need to grow your business',
+    description: 'For top sellers who want full visibility & support.',
     features: [
       'Unlimited products',
-      'Advanced shop analytics',
-      'Reduced transaction fees (3%)',
-      'Featured in promotions',
-      'Priority support',
-      'Shop customization options'
+      'Advanced dashboard & analytics',
+      'Featured on homepage banner',
+      'Direct support via WhatsApp',
+      'Monthly sales report',
+      'Premium delivery (fast dispatch + tracking)'
     ],
-    limitations: [],
+    icon: '🧡',
+    buttonText: 'Go Premium',
     recommended: true
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: '40,000 RWF',
-    period: '/month',
-    description: 'For established businesses with high volume',
-    features: [
-      'Unlimited products',
-      'Complete analytics suite',
-      'Lowest transaction fees (2%)',
-      'Premium shop placement',
-      'Dedicated account manager',
-      'API access',
-      'Custom integrations'
-    ],
-    limitations: []
   }
 ];
+
+type FormValues = {
+  plan: string;
+}
 
 const SellerSubscription = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const form = useForm<FormValues>({
+    defaultValues: {
+      plan: 'starter'
+    }
+  });
 
-  const handleSubscription = (planId: string) => {
+  const handleSubscription = (values: FormValues) => {
+    const plan = subscriptionPlans.find(p => p.id === values.plan);
+    
     // Mock subscription process
     toast({
       title: "Subscription Selected",
-      description: `You've selected the ${planId} plan. Redirecting to dashboard.`,
+      description: `You've selected the ${plan?.name}. Redirecting to dashboard.`,
     });
     
     // In a real implementation, this would handle payment and subscription setup
@@ -88,51 +101,86 @@ const SellerSubscription = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {subscriptionPlans.map((plan) => (
-              <Card key={plan.id} className={`flex flex-col ${plan.recommended ? 'border-iwanyu-orange shadow-lg relative' : ''}`}>
-                {plan.recommended && (
-                  <div className="absolute -top-4 left-0 right-0 text-center">
-                    <span className="bg-iwanyu-orange text-white px-4 py-1 rounded-full text-sm font-medium">
-                      Recommended
-                    </span>
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold">{plan.name}</CardTitle>
-                  <div className="mt-2">
-                    <span className="text-3xl font-bold">{plan.price}</span>
-                    {plan.period && <span className="text-sm text-iwanyu-gray">{plan.period}</span>}
-                  </div>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start">
-                        <Check className="h-5 w-5 text-green-500 mr-2 shrink-0" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                    {plan.limitations.map((limitation, idx) => (
-                      <li key={idx} className="flex items-start text-iwanyu-gray">
-                        <AlertCircle className="h-5 w-5 text-iwanyu-gray mr-2 shrink-0" />
-                        <span>{limitation}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    onClick={() => handleSubscription(plan.id)}
-                    className={`w-full ${plan.recommended ? 'bg-iwanyu-orange hover:bg-iwanyu-dark-orange' : ''}`}
-                  >
-                    Select Plan
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubscription)}>
+              <RadioGroup
+                defaultValue="starter"
+                className="grid grid-cols-1 md:grid-cols-3 gap-8"
+                {...form.register("plan")}
+              >
+                {subscriptionPlans.map((plan) => (
+                  <FormField
+                    key={plan.id}
+                    control={form.control}
+                    name="plan"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Card 
+                            className={`relative cursor-pointer border-2 h-full flex flex-col ${
+                              field.value === plan.id 
+                                ? 'border-iwanyu-orange shadow-lg' 
+                                : plan.recommended 
+                                  ? 'border-iwanyu-orange/50' 
+                                  : 'border-gray-200'
+                            }`}
+                            onClick={() => form.setValue('plan', plan.id)}
+                          >
+                            {plan.recommended && (
+                              <div className="absolute -top-4 left-0 right-0 text-center">
+                                <span className="bg-iwanyu-orange text-white px-4 py-1 rounded-full text-sm font-medium">
+                                  Recommended
+                                </span>
+                              </div>
+                            )}
+                            <div className="absolute top-4 right-4">
+                              {field.value === plan.id ? (
+                                <CircleDot className="h-5 w-5 text-iwanyu-orange" />
+                              ) : (
+                                <Circle className="h-5 w-5 text-gray-400" />
+                              )}
+                            </div>
+                            <CardHeader>
+                              <div className="text-2xl mb-2">{plan.icon}</div>
+                              <CardTitle className="text-xl font-bold">{plan.name}</CardTitle>
+                              <div className="mt-2">
+                                <span className="text-3xl font-bold">{plan.price}</span>
+                                {plan.period && <span className="text-sm text-iwanyu-gray">{plan.period}</span>}
+                              </div>
+                              <CardDescription>{plan.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-grow">
+                              <ul className="space-y-3">
+                                {plan.features.map((feature, idx) => (
+                                  <li key={idx} className="flex items-center gap-2">
+                                    <Check className="h-5 w-5 text-green-500 shrink-0" />
+                                    <span>{feature}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </CardContent>
+                            <CardFooter>
+                              <Button 
+                                type="submit"
+                                onClick={() => form.setValue('plan', plan.id)}
+                                className={`w-full ${
+                                  plan.id === 'premium' || field.value === plan.id 
+                                    ? 'bg-iwanyu-orange hover:bg-iwanyu-dark-orange' 
+                                    : ''
+                                }`}
+                              >
+                                {plan.buttonText} <ArrowRight className="ml-2 h-4 w-4" />
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </RadioGroup>
+            </form>
+          </Form>
           
           <div className="mt-12 text-center">
             <h2 className="text-2xl font-bold mb-4">Why Sell on Iwanyu?</h2>
