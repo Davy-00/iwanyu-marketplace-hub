@@ -1,49 +1,58 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
+import React, { useState } from 'react';
 import MainLayout from '@/layouts/MainLayout';
-import { subscriptionPlans } from '@/components/seller/subscription/SubscriptionPlansData';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import SubscriptionForm from '@/components/seller/subscription/SubscriptionForm';
 import SubscriptionBenefits from '@/components/seller/subscription/SubscriptionBenefits';
 import SubscriptionFAQ from '@/components/seller/subscription/SubscriptionFAQ';
+import { toast } from '@/hooks/use-toast';
 
 const SellerSubscription = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const [currentPlan, setCurrentPlan] = useState<string>('starter');
   
-  const handleSubscription = (selectedPlan: string) => {
-    const plan = subscriptionPlans.find(p => p.id === selectedPlan);
+  const handleSubscribe = (plan: string) => {
+    setCurrentPlan(plan);
     
-    // Mock subscription process
-    toast({
-      title: "Subscription Selected",
-      description: `You've selected the ${plan?.name}. Redirecting to dashboard.`,
-    });
-    
-    // In a real implementation, this would handle payment and subscription setup
+    // In a real app, this would call an API to update the subscription
     setTimeout(() => {
       navigate('/seller-dashboard');
     }, 1500);
   };
-
+  
   return (
     <MainLayout>
-      <div className="iwanyu-container py-12">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Become a Seller on Iwanyu</h1>
-            <p className="text-lg text-iwanyu-gray max-w-2xl mx-auto">
-              Choose the plan that best suits your business needs and start selling your products to customers across Rwanda.
-            </p>
-          </div>
-
-          <SubscriptionForm onSubscribe={handleSubscription} />
-          
-          <SubscriptionBenefits />
-          
-          <SubscriptionFAQ />
+      <div className="container max-w-6xl py-8">
+        <div className="flex justify-between items-center mb-6">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/seller-dashboard')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
         </div>
+        
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Choose Your Seller Plan</h1>
+          <p className="text-iwanyu-gray">
+            Select the subscription plan that best fits your business needs.
+          </p>
+        </div>
+        
+        {/* Subscription Plans */}
+        <div className="mb-12">
+          <SubscriptionForm onSubscribe={handleSubscribe} />
+        </div>
+        
+        {/* Benefits */}
+        <SubscriptionBenefits />
+        
+        {/* FAQs */}
+        <SubscriptionFAQ />
       </div>
     </MainLayout>
   );

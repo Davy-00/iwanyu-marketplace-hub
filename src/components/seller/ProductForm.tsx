@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface ProductFormProps {
   onSubmit: (e: React.FormEvent) => void;
@@ -10,6 +11,40 @@ interface ProductFormProps {
 }
 
 const ProductForm = ({ onSubmit, onCancel }: ProductFormProps) => {
+  const [productName, setProductName] = useState('');
+  const [productPrice, setProductPrice] = useState('');
+  const [productInventory, setProductInventory] = useState('');
+  const [productDescription, setProductDescription] = useState('');
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!productName || !productPrice || !productInventory) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill out all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create new product object to pass to parent
+    const newProduct = {
+      id: `prod-${Date.now()}`,
+      name: productName,
+      price: parseFloat(productPrice),
+      inventory: parseInt(productInventory),
+      sales: 0
+    };
+    
+    toast({
+      title: "Product Added",
+      description: `${productName} has been added to your inventory.`
+    });
+    
+    onSubmit(e);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Card className="w-full max-w-lg">
@@ -17,7 +52,7 @@ const ProductForm = ({ onSubmit, onCancel }: ProductFormProps) => {
           <CardTitle>Add New Product</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <label htmlFor="productName" className="text-sm font-medium">Product Name</label>
@@ -25,6 +60,8 @@ const ProductForm = ({ onSubmit, onCancel }: ProductFormProps) => {
                   id="productName"
                   type="text" 
                   required
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
                   className="w-full p-2 border rounded-md"
                   placeholder="Enter product name"
                 />
@@ -36,6 +73,8 @@ const ProductForm = ({ onSubmit, onCancel }: ProductFormProps) => {
                   id="productPrice"
                   type="number" 
                   required
+                  value={productPrice}
+                  onChange={(e) => setProductPrice(e.target.value)}
                   className="w-full p-2 border rounded-md"
                   placeholder="Enter price"
                 />
@@ -47,6 +86,8 @@ const ProductForm = ({ onSubmit, onCancel }: ProductFormProps) => {
                   id="productInventory"
                   type="number" 
                   required
+                  value={productInventory}
+                  onChange={(e) => setProductInventory(e.target.value)}
                   className="w-full p-2 border rounded-md"
                   placeholder="Enter inventory amount"
                 />
@@ -57,6 +98,8 @@ const ProductForm = ({ onSubmit, onCancel }: ProductFormProps) => {
                 <textarea 
                   id="productDescription"
                   rows={3}
+                  value={productDescription}
+                  onChange={(e) => setProductDescription(e.target.value)}
                   className="w-full p-2 border rounded-md"
                   placeholder="Enter product description"
                 />

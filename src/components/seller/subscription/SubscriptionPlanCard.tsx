@@ -64,16 +64,18 @@ const SubscriptionPlanCard: React.FC<SubscriptionPlanCardProps> = ({
       </CardContent>
       <CardFooter>
         <Button 
-          type="submit"
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onSelect(plan.id);
             onSubscribe();
           }}
           className={`w-full ${
-            plan.id === 'premium' || isSelected 
+            isSelected 
               ? 'bg-iwanyu-orange hover:bg-iwanyu-dark-orange' 
-              : ''
+              : plan.id === 'premium'
+                ? 'bg-iwanyu-orange hover:bg-iwanyu-dark-orange' 
+                : ''
           }`}
         >
           {plan.buttonText} <ArrowRight className="ml-2 h-4 w-4" />
