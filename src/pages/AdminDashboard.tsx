@@ -1,10 +1,15 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Store, Users, ShoppingBag, DollarSign } from 'lucide-react';
+import { Store, Users, ShoppingBag, DollarSign, Image, Package } from 'lucide-react';
 import MainLayout from '@/layouts/MainLayout';
+import AdminBannerForm from '@/components/admin/AdminBannerForm';
+import AdminProductManagement from '@/components/admin/AdminProductManagement';
+import AdminOrderManagement from '@/components/admin/AdminOrderManagement';
+import { toast } from '@/hooks/use-toast';
 
 // Mock data for admin dashboard
 const adminData = {
@@ -74,6 +79,22 @@ const adminData = {
 };
 
 const AdminDashboard = () => {
+  const [showBannerForm, setShowBannerForm] = useState(false);
+  
+  const handleAddBanner = () => {
+    setShowBannerForm(true);
+  };
+  
+  const handleBannerFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowBannerForm(false);
+    toast({
+      title: "Success",
+      description: "Banner added successfully!",
+      variant: "default",
+    });
+  };
+  
   return (
     <MainLayout>
       <div className="iwanyu-container py-8">
@@ -81,6 +102,7 @@ const AdminDashboard = () => {
         
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Card 1 */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Sellers</CardTitle>
@@ -92,6 +114,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
           
+          {/* Card 2 */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
@@ -103,6 +126,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
           
+          {/* Card 3 */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
@@ -114,6 +138,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
           
+          {/* Card 4 */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -229,40 +254,70 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
           
-          {/* Other Tabs (placeholder for now) */}
+          {/* Products Tab */}
           <TabsContent value="products">
-            <Card className="p-6">
-              <div className="text-center py-8">
-                <h3 className="text-xl font-semibold mb-2">Product Management Coming Soon</h3>
-                <p className="text-iwanyu-gray mb-6">Manage all products across the platform from here.</p>
-              </div>
-            </Card>
+            <AdminProductManagement />
           </TabsContent>
           
+          {/* Orders Tab */}
           <TabsContent value="orders">
-            <Card className="p-6">
-              <div className="text-center py-8">
-                <h3 className="text-xl font-semibold mb-2">Order Management Coming Soon</h3>
-                <p className="text-iwanyu-gray mb-6">Track and manage all orders across the platform.</p>
-              </div>
-            </Card>
+            <AdminOrderManagement />
           </TabsContent>
           
+          {/* Promotions Tab */}
           <TabsContent value="promotions">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Manage Homepage Banners</CardTitle>
+                <Button 
+                  className="bg-iwanyu-orange hover:bg-iwanyu-dark-orange"
+                  onClick={handleAddBanner}
+                >
+                  <Image className="mr-2 h-4 w-4" />
+                  Add New Banner
+                </Button>
               </CardHeader>
               <CardContent>
-                <div className="bg-iwanyu-light-gray p-4 rounded-md mb-6 text-center">
-                  <p className="text-lg">Homepage banner management will be added here.</p>
-                  <p className="text-sm text-iwanyu-gray mt-2">You'll be able to upload, schedule, and manage promotional banners.</p>
-                </div>
-                <div className="text-center">
-                  <Button className="bg-iwanyu-orange hover:bg-iwanyu-dark-orange">
-                    Add New Banner
-                  </Button>
-                </div>
+                {showBannerForm ? (
+                  <AdminBannerForm 
+                    onSubmit={handleBannerFormSubmit}
+                    onCancel={() => setShowBannerForm(false)}
+                  />
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between bg-gray-50 p-4 rounded-md">
+                      <div className="flex items-center space-x-4">
+                        <div className="bg-gray-200 h-16 w-24 rounded flex items-center justify-center">
+                          <Image className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Holiday Season Sale</h3>
+                          <p className="text-sm text-iwanyu-gray">Active until Apr 15, 2025</p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm">Edit</Button>
+                        <Button variant="ghost" size="sm" className="text-red-500">Remove</Button>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between bg-gray-50 p-4 rounded-md">
+                      <div className="flex items-center space-x-4">
+                        <div className="bg-gray-200 h-16 w-24 rounded flex items-center justify-center">
+                          <Image className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">New Arrivals</h3>
+                          <p className="text-sm text-iwanyu-gray">Active until Apr 30, 2025</p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm">Edit</Button>
+                        <Button variant="ghost" size="sm" className="text-red-500">Remove</Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
