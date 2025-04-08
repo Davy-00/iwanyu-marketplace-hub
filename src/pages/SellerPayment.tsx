@@ -3,11 +3,34 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import MainLayout from '@/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CreditCard, CheckCircle, Check } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Check } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { subscriptionPlans } from '@/components/seller/subscription/SubscriptionPlansData';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+// Irembo Pay configuration
+const IREMBO_PAY_API_URL = 'https://api.irembo.gov.rw/payments/v1/create-payment';
+const IREMBO_PAY_REDIRECT_URL = window.location.origin + '/payment-success';
+const IREMBO_PAY_CALLBACK_URL = window.location.origin + '/api/irembo-callback';
+
+interface PaymentStatus {
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  message?: string;
+}
+
+interface IremboPayResponse {
+  paymentUrl: string;
+  referenceId: string;
+}
 
 const SellerPayment = () => {
   const location = useLocation();
@@ -15,8 +38,11 @@ const SellerPayment = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>({ status: 'pending' });
   const [paymentReference, setPaymentReference] = useState('');
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
+  const [showIremboDialog, setShowIremboDialog] = useState(false);
+  const [iremboPayUrl, setIremboPayUrl] = useState('');
   
   // Get the plan ID from URL query parameters
   const searchParams = new URLSearchParams(location.search);
@@ -30,9 +56,18 @@ const SellerPayment = () => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+      
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to continue with your subscription",
+          variant: "destructive",
+        });
+        navigate('/auth');
+      }
     };
     fetchUser();
-  }, []);
+  }, [navigate, toast]);
   
   // Generate a unique payment reference
   useEffect(() => {
@@ -41,21 +76,48 @@ const SellerPayment = () => {
       setPaymentReference(generatedRef);
     }
   }, [selectedPlan, paymentReference]);
-  
-  const handlePayment = async () => {
-    if (!selectedPlan || !user) {
-      toast({
-        title: "Error",
-        description: !user ? "Please login to continue" : "No plan selected",
-        variant: "destructive",
-      });
-      return;
+
+  // Check payment status
+  const checkPaymentStatus = async (reference: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('status')
+        .eq('reference', reference)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data.status === 'completed') {
+        setCompleted(true);
+        setPaymentStatus({ status: 'completed' });
+        toast({
+          title: "Payment Successful",
+          description: `You have successfully subscribed to the ${selectedPlan?.name}.`,
+        });
+        
+        // Redirect to seller dashboard after successful payment
+        setTimeout(() => {
+          navigate('/seller-dashboard');
+        }, 2000);
+      } else if (data.status === 'failed') {
+        setPaymentStatus({ status: 'failed', message: 'Payment failed. Please try again.' });
+        toast({
+          title: "Payment Failed",
+          description: "Your payment could not be processed. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error);
     }
-    
-    setLoading(true);
+  };
+  
+  // Create payment record in the database
+  const createPaymentRecord = async () => {
+    if (!selectedPlan || !user) return null;
     
     try {
-      // Create a payment record in the database
       const { data, error } = await supabase
         .from('payments')
         .insert({
@@ -69,11 +131,83 @@ const SellerPayment = () => {
         .select();
         
       if (error) throw error;
+      return data[0];
+    } catch (error) {
+      console.error('Error creating payment record:', error);
+      return null;
+    }
+  };
+
+  // Simulate Irembo Pay integration (in a real implementation, this would call the Irembo Pay API)
+  const initiateIremboPayment = async () => {
+    if (!selectedPlan || !user) {
+      toast({
+        title: "Error",
+        description: !user ? "Please login to continue" : "No plan selected",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setLoading(true);
+    setPaymentStatus({ status: 'processing' });
+    
+    try {
+      // Create payment record in database
+      const paymentRecord = await createPaymentRecord();
+      if (!paymentRecord) {
+        throw new Error('Failed to create payment record');
+      }
       
-      // In a real implementation, this would redirect to Irembo Pay
-      // For this example, we'll simulate a successful payment after a delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // In a real implementation, call the Irembo Pay API
+      // For now, we'll simulate the response with a timeout
+      // This would be replaced with an actual API call in production
+      /*
+      const response = await fetch(IREMBO_PAY_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: selectedPlan.priceValue,
+          currency: 'RWF',
+          description: `Subscription to ${selectedPlan.name} Plan`,
+          reference: paymentReference,
+          returnUrl: IREMBO_PAY_REDIRECT_URL,
+          callbackUrl: IREMBO_PAY_CALLBACK_URL,
+        }),
+      });
       
+      const data = await response.json();
+      */
+      
+      // Simulate API response
+      setTimeout(() => {
+        // This URL would come from the actual Irembo Pay API
+        const simulatedPaymentUrl = `https://pay.irembo.gov.rw/payments/${paymentReference}`;
+        setIremboPayUrl(simulatedPaymentUrl);
+        setShowIremboDialog(true);
+        setLoading(false);
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Payment error:', error);
+      setPaymentStatus({ status: 'failed', message: 'Failed to initiate payment' });
+      toast({
+        title: "Payment Failed",
+        description: "There was an error processing your payment. Please try again.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  };
+  
+  // Simulate payment completion (this would normally be called after user is redirected back from Irembo Pay)
+  const simulatePaymentCompletion = async () => {
+    setShowIremboDialog(false);
+    setLoading(true);
+    
+    try {
       // Update the payment status to completed
       const { error: updateError } = await supabase
         .from('payments')
@@ -87,7 +221,7 @@ const SellerPayment = () => {
         .from('subscriptions')
         .insert({
           user_id: user.id,
-          plan_id: selectedPlan.id,
+          plan_id: selectedPlan?.id,
           start_date: new Date().toISOString(),
           end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
           status: 'active',
@@ -97,10 +231,11 @@ const SellerPayment = () => {
       if (subscriptionError) throw subscriptionError;
       
       setCompleted(true);
+      setPaymentStatus({ status: 'completed' });
       
       toast({
         title: "Payment Successful",
-        description: `You have successfully subscribed to the ${selectedPlan.name}.`,
+        description: `You have successfully subscribed to the ${selectedPlan?.name}.`,
       });
       
       // Redirect to seller dashboard after successful payment
@@ -109,7 +244,8 @@ const SellerPayment = () => {
       }, 2000);
       
     } catch (error) {
-      console.error('Payment error:', error);
+      console.error('Error completing payment:', error);
+      setPaymentStatus({ status: 'failed', message: 'Failed to complete payment' });
       toast({
         title: "Payment Failed",
         description: "There was an error processing your payment. Please try again.",
@@ -205,7 +341,7 @@ const SellerPayment = () => {
               {!completed && (
                 <Button 
                   className="w-full bg-iwanyu-orange hover:bg-iwanyu-dark-orange"
-                  onClick={handlePayment}
+                  onClick={initiateIremboPayment}
                   disabled={loading}
                 >
                   {loading ? 'Processing...' : `Pay Now with Irembo Pay`}
@@ -248,6 +384,44 @@ const SellerPayment = () => {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Irembo Pay Dialog */}
+        <Dialog open={showIremboDialog} onOpenChange={setShowIremboDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Irembo Pay Checkout</DialogTitle>
+              <DialogDescription>
+                You are being redirected to Irembo Pay to complete your payment.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="p-4 border rounded-md bg-gray-50">
+              <div className="text-center">
+                <p className="mb-4">
+                  You will be redirected to Irembo Pay to complete your payment of <strong>{selectedPlan.price}</strong> for <strong>{selectedPlan.name}</strong> subscription.
+                </p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Reference: {paymentReference}
+                </p>
+                {/* In a real implementation, this would redirect to the Irembo Pay URL */}
+                <Button 
+                  onClick={simulatePaymentCompletion} 
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  Proceed to Payment
+                </Button>
+              </div>
+            </div>
+            <DialogFooter className="sm:justify-start">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowIremboDialog(false)}
+              >
+                Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
