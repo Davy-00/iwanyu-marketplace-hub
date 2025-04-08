@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Check, Circle, CircleDot, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { type SubscriptionPlan } from './SubscriptionPlansData';
+import { useNavigate } from 'react-router-dom';
 
 interface SubscriptionPlanCardProps {
   plan: SubscriptionPlan;
@@ -18,6 +19,16 @@ const SubscriptionPlanCard: React.FC<SubscriptionPlanCardProps> = ({
   onSelect,
   onSubscribe 
 }) => {
+  const navigate = useNavigate();
+
+  const handleSubscribe = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSelect(plan.id);
+    // Navigate to payment page with plan ID as query parameter
+    navigate(`/seller-payment?plan=${plan.id}`);
+    onSubscribe();
+  };
+
   return (
     <Card 
       className={`relative cursor-pointer border-2 h-full flex flex-col ${
@@ -65,11 +76,7 @@ const SubscriptionPlanCard: React.FC<SubscriptionPlanCardProps> = ({
       <CardFooter>
         <Button 
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelect(plan.id);
-            onSubscribe();
-          }}
+          onClick={handleSubscribe}
           className={`w-full ${
             isSelected 
               ? 'bg-iwanyu-orange hover:bg-iwanyu-dark-orange' 

@@ -16,6 +16,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import React from "react";
 import SellerSubscription from "./pages/SellerSubscription";
+import SellerPayment from "./pages/SellerPayment";
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/seller-dashboard" element={<SellerDashboard />} />
             <Route path="/seller-subscription" element={<SellerSubscription />} />
+            <Route path="/seller-payment" element={<SellerPayment />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
