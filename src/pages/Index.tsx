@@ -7,7 +7,7 @@ import FeaturedShops from '@/components/home/FeaturedShops';
 
 const Index = () => {
   return (
-    <MainLayout showSearch={true}>
+    <MainLayout>
       <Banner />
       <FeaturedProducts />
       <FeaturedShops />
