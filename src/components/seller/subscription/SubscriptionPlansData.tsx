@@ -1,66 +1,76 @@
 
-import React from 'react';
+import { z } from 'zod';
 
-export interface SubscriptionPlan {
-  id: string;
-  name: string;
-  price: string;
-  period: string;
-  description: string;
-  features: string[];
-  icon: string;
-  buttonText: string;
-  recommended?: boolean;
-}
+// Define the schema for subscription plans
+export const subscriptionPlanSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  price: z.string(),
+  priceValue: z.number(), // Numerical value for pricing calculations
+  period: z.string().optional(),
+  features: z.array(z.string()),
+  buttonText: z.string(),
+  icon: z.string(),
+  recommended: z.boolean().optional(),
+});
 
+// Create the type from the schema
+export type SubscriptionPlan = z.infer<typeof subscriptionPlanSchema>;
+
+// Define the subscription plans
 export const subscriptionPlans: SubscriptionPlan[] = [
   {
-    id: 'starter',
-    name: 'Starter Plan',
-    price: '10,000 RWF',
+    id: 'basic',
+    name: 'Basic Seller',
+    description: 'Perfect for beginners getting started with online selling',
+    price: 'RWF 10,000',
+    priceValue: 10000,
     period: '/month',
-    description: 'Perfect for new sellers.',
     features: [
-      'Add up to 10 products',
-      'Basic seller dashboard',
-      'Email support',
-      'Standard delivery support'
+      'List up to 10 products',
+      'Basic analytics dashboard',
+      'Standard support',
+      'Standard listing visibility',
     ],
-    icon: '🟠',
-    buttonText: 'Subscribe Now'
+    buttonText: 'Get Started',
+    icon: '🛍️',
   },
   {
     id: 'pro',
-    name: 'Pro Plan',
-    price: '20,000 RWF',
+    name: 'Professional Seller',
+    description: 'Everything you need for growing your business',
+    price: 'RWF 25,000',
+    priceValue: 25000,
     period: '/month',
-    description: 'Ideal for growing businesses.',
     features: [
-      'Unlimited products',
-      'Advanced dashboard & analytics',
-      'Priority email support',
-      'Homepage feature eligibility',
-      'Integrated delivery tracking'
+      'List up to 50 products',
+      'Advanced analytics dashboard',
+      'Priority support',
+      'Enhanced listing visibility',
+      'Access to promotional tools',
     ],
-    icon: '⚪',
-    buttonText: 'Upgrade to Pro',
-    recommended: true
+    buttonText: 'Go Pro',
+    icon: '⭐',
+    recommended: true,
   },
   {
     id: 'premium',
-    name: 'Premium Plan',
-    price: '35,000 RWF',
+    name: 'Premium Seller',
+    description: 'Ultimate selling package for established businesses',
+    price: 'RWF 50,000',
+    priceValue: 50000,
     period: '/month',
-    description: 'For top sellers who want full visibility & support.',
     features: [
-      'Unlimited products',
-      'Advanced dashboard & analytics',
-      'Featured on homepage banner',
-      'Direct support via WhatsApp',
-      'Monthly sales report',
-      'Premium delivery (fast dispatch + tracking)'
+      'Unlimited product listings',
+      'Comprehensive analytics & insights',
+      'Dedicated account manager',
+      'Top search placement',
+      'Advanced promotional tools',
+      'Customizable store front',
+      'Exclusive seller events',
     ],
-    icon: '🧡',
-    buttonText: 'Go Premium'
+    buttonText: 'Go Premium',
+    icon: '👑',
   }
 ];

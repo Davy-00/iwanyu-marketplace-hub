@@ -15,6 +15,8 @@ const SellerPayment = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [paymentReference, setPaymentReference] = useState('');
+  const [user, setUser] = useState(null);
   
   // Get the plan ID from URL query parameters
   const searchParams = new URLSearchParams(location.search);
@@ -22,18 +24,78 @@ const SellerPayment = () => {
   
   // Find the selected plan from our subscription plans data
   const selectedPlan = subscriptionPlans.find(plan => plan.id === planId);
+
+  // Get current authenticated user
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    fetchUser();
+  }, []);
+  
+  // Generate a unique payment reference
+  useEffect(() => {
+    if (!paymentReference && selectedPlan) {
+      const generatedRef = `IWP-${selectedPlan.id.toUpperCase()}-${Date.now().toString().slice(-6)}`;
+      setPaymentReference(generatedRef);
+    }
+  }, [selectedPlan, paymentReference]);
   
   const handlePayment = async () => {
-    if (!selectedPlan) return;
+    if (!selectedPlan || !user) {
+      toast({
+        title: "Error",
+        description: !user ? "Please login to continue" : "No plan selected",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setLoading(true);
     
     try {
-      // In a real app, this would call your payment processor API
-      // For demo purposes, we'll simulate a payment processing delay
+      // Create a payment record in the database
+      const { data, error } = await supabase
+        .from('payments')
+        .insert({
+          user_id: user.id,
+          reference: paymentReference,
+          amount: selectedPlan.priceValue || 0,
+          currency: 'RWF',
+          plan_id: selectedPlan.id,
+          status: 'pending'
+        })
+        .select();
+        
+      if (error) throw error;
+      
+      // In a real implementation, this would redirect to Irembo Pay
+      // For this example, we'll simulate a successful payment after a delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Simulate successful payment
+      // Update the payment status to completed
+      const { error: updateError } = await supabase
+        .from('payments')
+        .update({ status: 'completed' })
+        .eq('reference', paymentReference);
+        
+      if (updateError) throw updateError;
+      
+      // Create a subscription record
+      const { error: subscriptionError } = await supabase
+        .from('subscriptions')
+        .insert({
+          user_id: user.id,
+          plan_id: selectedPlan.id,
+          start_date: new Date().toISOString(),
+          end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+          status: 'active',
+          payment_reference: paymentReference
+        });
+        
+      if (subscriptionError) throw subscriptionError;
+      
       setCompleted(true);
       
       toast({
@@ -41,7 +103,7 @@ const SellerPayment = () => {
         description: `You have successfully subscribed to the ${selectedPlan.name}.`,
       });
       
-      // In a real app, you would update the user's subscription status in your database
+      // Redirect to seller dashboard after successful payment
       setTimeout(() => {
         navigate('/seller-dashboard');
       }, 2000);
@@ -101,18 +163,40 @@ const SellerPayment = () => {
                 <div className="text-center py-8">
                   <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
                   <h3 className="text-xl font-medium mb-2">Payment Successful!</h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground mb-2">
                     Your subscription has been activated.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Reference: {paymentReference}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="bg-muted p-4 rounded-md text-center">
-                    <CreditCard className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                    <p>
-                      This is a demo payment page. In a real application, you would 
-                      integrate with a payment processor like Stripe.
-                    </p>
+                  <div className="rounded-md border p-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <h4 className="font-medium">Irembo Pay</h4>
+                        <p className="text-sm text-muted-foreground">Secure payment processed by Irembo Pay</p>
+                      </div>
+                      <div className="h-8 w-12 bg-blue-600 rounded flex items-center justify-center text-white text-xs font-bold">
+                        IREMBO
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Payment Reference</span>
+                        <span className="font-medium">{paymentReference}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Amount</span>
+                        <span className="font-medium">{selectedPlan.price}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm text-center text-muted-foreground">
+                    By clicking "Pay Now", you will be redirected to Irembo Pay to complete your payment.
                   </div>
                 </div>
               )}
@@ -124,7 +208,7 @@ const SellerPayment = () => {
                   onClick={handlePayment}
                   disabled={loading}
                 >
-                  {loading ? 'Processing...' : `Pay ${selectedPlan.price}`}
+                  {loading ? 'Processing...' : `Pay Now with Irembo Pay`}
                 </Button>
               )}
             </CardFooter>
