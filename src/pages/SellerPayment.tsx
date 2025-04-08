@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import MainLayout from '@/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CreditCard, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CreditCard, CheckCircle, Check } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { subscriptionPlans } from '@/components/seller/subscription/SubscriptionPlansData';
 import { useToast } from '@/hooks/use-toast';
